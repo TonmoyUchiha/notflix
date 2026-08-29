@@ -1,0 +1,10 @@
+node_modules/
+data/
+public/cache/thumbnails/*.jpg
+
+# Local tooling config (dev-server launch settings), not project source.
+.claude/
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db

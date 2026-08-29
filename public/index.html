@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Notflix</title>
+<meta name="theme-color" content="#0B0B0D" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Notflix" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- ============ LOGIN SCREEN ============ -->
+  <div id="login-screen" class="screen">
+    <div class="login-box">
+      <h1 class="marquee">NOTFLIX</h1>
+      <p class="login-sub">your pc, on your terms</p>
+      <div id="pin-dots" class="pin-dots">
+        <span class="dot"></span><span class="dot"></span>
+        <span class="dot"></span><span class="dot"></span>
+      </div>
+      <div id="pin-error" class="pin-error">Wrong PIN</div>
+      <div class="keypad">
+        <button class="key" data-key="1">1</button>
+        <button class="key" data-key="2">2</button>
+        <button class="key" data-key="3">3</button>
+        <button class="key" data-key="4">4</button>
+        <button class="key" data-key="5">5</button>
+        <button class="key" data-key="6">6</button>
+        <button class="key" data-key="7">7</button>
+        <button class="key" data-key="8">8</button>
+        <button class="key" data-key="9">9</button>
+        <button class="key key-ghost" data-key="clear">Clear</button>
+        <button class="key" data-key="0">0</button>
+        <button class="key key-ghost" data-key="back">&#9003;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SIDEBAR (phone) ============ -->
+  <div id="sidebar-scrim" class="sidebar-scrim"></div>
+  <aside id="sidebar" class="sidebar" aria-label="Menu" aria-hidden="true">
+    <div class="sidebar-head">
+      <span class="marquee small">NOTFLIX</span>
+      <button id="sidebar-close" class="icon-btn" aria-label="Close menu">&#10005;</button>
+    </div>
+    <nav id="sidebar-nav" class="sidebar-nav"></nav>
+    <div class="sidebar-foot">
+      <button id="sidebar-rescan" class="sidebar-item sidebar-action">
+        <span class="sidebar-item-icon">&#8635;</span> Rescan library
+      </button>
+      <p id="sidebar-count" class="sidebar-count"></p>
+    </div>
+  </aside>
+
+  <!-- ============ BROWSE SCREEN ============ -->
+  <div id="browse-screen" class="screen hidden">
+    <nav id="navbar" class="navbar">
+      <button id="menu-btn" class="icon-btn menu-btn" aria-label="Menu"
+              aria-controls="sidebar" aria-expanded="false">
+        <span class="menu-icon"><i></i><i></i><i></i></span>
+      </button>
+      <span class="marquee small">NOTFLIX</span>
+      <div id="nav-tabs" class="nav-tabs"></div>
+      <button id="search-btn" class="icon-btn" title="Search" aria-label="Search">&#9906;</button>
+      <button id="rescan-btn" class="icon-btn" title="Rescan library" aria-label="Rescan">&#8635;</button>
+    </nav>
+
+    <div id="hero" class="hero hidden">
+      <div id="hero-backdrop" class="hero-backdrop"></div>
+      <div class="hero-fade"></div>
+      <div class="hero-info">
+        <div class="hero-eyebrow">Featured</div>
+        <h2 id="hero-title" class="hero-title"></h2>
+        <div id="hero-meta" class="hero-meta"></div>
+        <div class="hero-actions">
+          <button id="hero-play" class="play-btn">&#9654; Play</button>
+          <button id="hero-info" class="info-btn">More info</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="scan-banner" class="scan-banner hidden"></div>
+
+    <main id="rows" class="rows"></main>
+
+    <div id="empty-state" class="empty-state hidden">
+      <h2>Nothing found yet</h2>
+      <p>Notflix is scanning your PC for videos. This can take a few minutes on the first run.</p>
+    </div>
+  </div>
+
+  <!-- ============ SEARCH ============ -->
+  <div id="search-panel" class="search-panel hidden">
+    <div class="search-bar">
+      <input id="search-input" class="search-input" type="search"
+             placeholder="Search movies, shows, anime" autocomplete="off" />
+      <button id="search-close" class="icon-btn" aria-label="Close search">&#10005;</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+    <div id="search-empty" class="search-empty hidden"></div>
+  </div>
+
+  <!-- ============ TITLE DETAIL ============ -->
+  <div id="detail" class="detail hidden">
+    <div class="detail-hero">
+      <div id="detail-backdrop" class="detail-backdrop"></div>
+      <div class="detail-fade"></div>
+    </div>
+    <div class="detail-body">
+      <h2 id="detail-title" class="detail-title"></h2>
+      <div id="detail-meta" class="detail-meta"></div>
+      <div class="detail-actions">
+        <button id="detail-play" class="play-btn">&#9654; Play</button>
+        <button id="detail-list" class="list-btn" aria-pressed="false">
+          <span class="list-btn-icon">+</span>
+          <span id="detail-list-text">My List</span>
+        </button>
+      </div>
+      <button id="detail-path" class="detail-path" title="Tap to copy">
+        <span class="detail-path-label">On disk</span>
+        <span id="detail-path-value" class="detail-path-value"></span>
+        <span id="detail-path-copied" class="detail-path-copied">Copied</span>
+      </button>
+      <div id="season-picker" class="season-picker hidden">
+        <select id="season-select" class="season-select" aria-label="Season"></select>
+      </div>
+      <div id="episode-list" class="episode-list"></div>
+    </div>
+  </div>
+  <!-- A sibling of #detail, not a child. #detail is the scrolling element and
+       carries a transform, and a transformed ancestor makes position:fixed
+       resolve against *it* rather than the viewport - so nested here the button
+       scrolled away with the episode list. -->
+  <button id="detail-close" class="detail-close hidden" aria-label="Back">&#8592;</button>
+
+  <!-- ============ PLAYER ============ -->
+  <div id="player-screen" class="screen hidden">
+    <div id="player-stage" class="player-stage">
+      <video id="player-video" playsinline webkit-playsinline preload="metadata" crossorigin="anonymous"></video>
+
+      <div id="player-spinner" class="spinner"></div>
+      <div id="player-status" class="player-status"></div>
+      <div id="seek-feedback" class="seek-feedback"></div>
+      <div id="player-error" class="player-error"></div>
+
+      <button id="big-play" class="big-play">&#9654;</button>
+
+      <div class="player-top">
+        <button id="close-player" class="close-btn">&#8592;</button>
+        <span id="player-title" class="player-title"></span>
+      </div>
+
+      <div id="next-up" class="next-up">
+        <div class="next-up-text">
+          <p class="next-up-eyebrow">Next episode</p>
+          <p id="next-up-title" class="next-up-title"></p>
+        </div>
+        <button id="next-up-btn" class="next-up-btn">Play</button>
+      </div>
+
+      <div id="player-controls" class="player-controls visible">
+        <div class="seek-row">
+          <span id="cur-time" class="time">0:00</span>
+          <div id="seek-bar" class="seek-bar">
+            <div id="seek-buffer" class="seek-buffer"></div>
+            <div id="seek-fill" class="seek-fill"></div>
+            <div id="seek-knob" class="seek-knob"></div>
+          </div>
+          <span id="dur-time" class="time">0:00</span>
+        </div>
+        <div class="button-row">
+          <button id="ctl-back10" class="ctl" title="Back 10 seconds">&#8630;10</button>
+          <button id="ctl-play" class="ctl ctl-main" title="Play/pause">&#9654;</button>
+          <button id="ctl-fwd10" class="ctl" title="Forward 10 seconds">10&#8631;</button>
+          <div class="spacer"></div>
+          <div id="vol-wrap" class="vol-wrap hidden">
+            <input id="vol-range" class="vol-range" type="range" min="0" max="1" step="0.05" value="1" />
+          </div>
+          <button id="ctl-subs" class="ctl hidden" title="Subtitles" aria-label="Subtitles">&#128488;</button>
+          <button id="ctl-speed" class="ctl ctl-text" title="Playback speed">1x</button>
+          <button id="ctl-fullscreen" class="ctl" title="Fullscreen">&#9974;</button>
+        </div>
+      </div>
+
+      <div id="subs-sheet" class="sheet-backdrop hidden">
+        <div class="sheet">
+          <p class="sheet-title">Subtitles</p>
+          <div id="subs-list"></div>
+          <p id="subs-note" class="sheet-note hidden"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/hls.min.js"></script>
+  <script src="/js/player.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
