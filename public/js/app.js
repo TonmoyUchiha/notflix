@@ -366,10 +366,118 @@
     scroller.className = "row-scroller";
     items.forEach(t => scroller.appendChild(renderCard(t, resumeMap)));
 
+    // The scroller sits in a track so the arrows can be positioned against
+    // the cards themselves rather than the row's heading as well.
+    const track = document.createElement("div");
+    track.className = "row-track";
+    const prev = document.createElement("button");
+    prev.className = "row-nav row-nav-prev";
+    prev.setAttribute("aria-label", "Scroll left");
+    prev.innerHTML = "&#8249;";
+    const next = document.createElement("button");
+    next.className = "row-nav row-nav-next";
+    next.setAttribute("aria-label", "Scroll right");
+    next.innerHTML = "&#8250;";
+
+    track.appendChild(prev);
+    track.appendChild(scroller);
+    track.appendChild(next);
+
     row.appendChild(head);
-    row.appendChild(scroller);
+    row.appendChild(track);
     rowsEl.appendChild(row);
+
+    wireRowScrolling(track, scroller, prev, next);
   }
+
+  // Gives a mouse three ways through a horizontal row: the arrows at each
+  // end, the wheel, and dragging. Touch already had swiping and is untouched.
+  function wireRowScrolling(track, scroller, prev, next) {
+    // Arrows only appear when there is actually something to scroll to, and
+    // each one hides at the end it would take you past.
+    function updateArrows() {
+      const max = scroller.scrollWidth - scroller.clientWidth;
+      const x = scroller.scrollLeft;
+      // A row at rest does NOT sit at scrollLeft 0: scroll-snap lands the
+      // first card against the scroller's own left padding, so "not scrolled"
+      // is really scrollLeft === padding-left. Comparing against 0 made the
+      // left arrow appear on every row from the start, pointing at nothing.
+      const restLeft = parseFloat(getComputedStyle(scroller).paddingLeft) || 0;
+      prev.classList.toggle("can-scroll", max > 4 && x > restLeft + 4);
+      next.classList.toggle("can-scroll", max > 4 && x < max - 4);
+    }
+
+    function page(dir) {
+      // Just under a full screenful, so a card stays visible as an anchor
+      // and you never lose your place between pages.
+      scroller.scrollBy({ left: dir * scroller.clientWidth * 0.85, behavior: "smooth" });
+    }
+
+    prev.addEventListener("click", () => page(-1));
+    next.addEventListener("click", () => page(1));
+    scroller.addEventListener("scroll", updateArrows, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    // Card art loads late and changes scrollWidth, so re-check once it settles.
+    setTimeout(updateArrows, 0);
+    setTimeout(updateArrows, 600);
+
+    // A plain mouse wheel only reports deltaY, so without this a wheel over a
+    // row does nothing horizontal at all. Deliberately does NOT swallow the
+    // page scroll at the ends of the row: once you have reached the last card,
+    // carrying on scrolling should move the page, not sit there stuck.
+    scroller.addEventListener("wheel", (e) => {
+      if (e.ctrlKey) return;                    // pinch-zoom gesture
+      const max = scroller.scrollWidth - scroller.clientWidth;
+      if (max <= 4) return;                     // nothing to scroll
+      // A trackpad's horizontal swipe already works; leave it alone.
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const atEnd = (dir > 0 && scroller.scrollLeft >= max - 1) ||
+                    (dir < 0 && scroller.scrollLeft <= 1);
+      if (atEnd) return;                        // let the page take over
+
+      e.preventDefault();
+      scroller.scrollLeft += e.deltaY;
+    }, { passive: false });
+
+    // Click-and-drag, the way you would shove a shelf sideways.
+    let down = false, startX = 0, startLeft = 0, moved = 0;
+
+    scroller.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      down = true; moved = 0;
+      startX = e.clientX;
+      startLeft = scroller.scrollLeft;
+    });
+
+    scroller.addEventListener("pointermove", (e) => {
+      if (!down) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) < 4) return;   // tolerate a shaky click
+      moved = Math.max(moved, Math.abs(dx));
+      scroller.classList.add("dragging");
+      scroller.scrollLeft = startLeft - dx;
+      e.preventDefault();
+    });
+
+    function endDrag() {
+      if (!down) return;
+      down = false;
+      scroller.classList.remove("dragging");
+      // Let the click that follows through only if this was a real click.
+      // Without this, dragging across a row opens whatever card you let go on.
+      if (moved > 4) {
+        const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+        scroller.addEventListener("click", swallow, { capture: true, once: true });
+        setTimeout(() => scroller.removeEventListener("click", swallow, true), 50);
+      }
+    }
+    scroller.addEventListener("pointerup", endDrag);
+    scroller.addEventListener("pointercancel", endDrag);
+    scroller.addEventListener("pointerleave", endDrag);
+  }
+
 
   function renderCard(t, resumeMap) {
     const card = document.createElement("div");

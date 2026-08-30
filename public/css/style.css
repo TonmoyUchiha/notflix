@@ -847,3 +847,80 @@ html, body {
   .navbar .marquee.small { flex: 1; }
   #rescan-btn { display: none; }
 }
+
+/* ==========================================================
+   HORIZONTAL ROWS ON DESKTOP
+   The scrollbar is hidden (right for touch, where you swipe),
+   which left a plain mouse with no way to scroll a row at all:
+   the wheel scrolls the page vertically and there was no bar
+   to drag. These give a pointer three ways through a row -
+   arrows, the wheel, and dragging - without changing how it
+   already behaves under a finger.
+   ========================================================== */
+
+.row-track { position: relative; }
+
+.row-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  z-index: 4;
+  color: var(--text);
+  font-size: 1.4rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease);
+}
+.row-nav-prev {
+  left: 0;
+  background: linear-gradient(90deg, rgba(11,11,13,0.95) 30%, rgba(11,11,13,0) 100%);
+}
+.row-nav-next {
+  right: 0;
+  background: linear-gradient(270deg, rgba(11,11,13,0.95) 30%, rgba(11,11,13,0) 100%);
+}
+
+/* Only ever on a real pointer. A touch device swipes, and a permanently
+   visible arrow there would just cover a card. */
+@media (hover: hover) and (pointer: fine) {
+  .row-track:hover .row-nav.can-scroll {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .row-nav.can-scroll:hover { background-size: 100%; color: var(--accent); }
+  .row-nav:active { transform: scale(0.92); }
+
+  /* A slim bar, visible only while the pointer is in the row, so you can
+     still see roughly where you are without it cluttering the page. */
+  .row-track:hover .row-scroller {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.28) transparent;
+  }
+  .row-track:hover .row-scroller::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+  }
+  .row-track:hover .row-scroller::-webkit-scrollbar-track { background: transparent; }
+  .row-track:hover .row-scroller::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.28);
+    border-radius: 3px;
+  }
+  .row-track:hover .row-scroller::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.45);
+  }
+
+  /* Grab cursor advertises that the row can be dragged. */
+  .row-scroller { cursor: grab; }
+  .row-scroller.dragging { cursor: grabbing; scroll-snap-type: none; }
+  .row-scroller.dragging .card { pointer-events: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-nav { transition: none; }
+}
