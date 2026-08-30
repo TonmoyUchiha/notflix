@@ -206,6 +206,53 @@ else, or set `MDNS_ENABLED: false` to switch it off and use the IP only.
   phone picks up in the same place (and the other way round). The row shows
   the exact episode you stopped on and how much is left.
 
+## Starting automatically when you log in
+
+You shouldn't have to double-click `start.bat` every time you turn your PC
+on. Double-click **`install-autostart.bat`** once, and Notflix starts hidden
+in the background at every login from then on - no console window, nothing
+to remember.
+
+This uses a shortcut in your Windows Startup folder - the same plain
+mechanism most ordinary apps use for "start with Windows." No administrator
+rights, no Windows service, nothing unusual to go wrong.
+
+Because it runs hidden, there's no window to glance at to check it's alive,
+so three more scripts cover that:
+
+- **`notflix-status.bat`** — is it running right now, and the last few lines
+  of what it printed on startup (the address, the PIN, how many videos it
+  found).
+- **`stop-notflix.bat`** — stops it. (You generally don't need `start.bat`
+  anymore once autostart is set up - it's already running.)
+- **`uninstall-autostart.bat`** — removes the Startup shortcut. Your library,
+  watch history and My List are untouched; this only undoes the autostart.
+
+Output that would normally print to the console instead goes to
+`data\notflix.log` (and `data\notflix-error.log` for anything that went
+wrong), so troubleshooting a hidden instance is still possible - just via a
+file instead of a window.
+
+### Want it to restart itself if it ever crashes?
+
+`install-autostart.bat` starts Notflix once at login and leaves it there - if
+it ever crashed, it would just stay down until your next login.
+**`install-autostart-with-recovery.bat`** does the same job through Windows
+Task Scheduler instead, which adds one thing: if Notflix crashes, Task
+Scheduler notices and restarts it automatically within a minute (up to 3
+times). Everything else - `notflix-status.bat`, `stop-notflix.bat`,
+`uninstall-autostart.bat` - works the same way regardless of which one you
+used; they check for both and handle whichever is actually installed.
+
+The tradeoff is that Task Scheduler is a Windows service with its own
+permissions model, which in rare cases (locked-down corporate machines,
+unusual remote-session setups) refuses to create scheduled tasks with
+"Access is denied," for reasons unrelated to your own account. If that
+happens, right-click the `.bat` and try "Run as administrator" - if it still
+fails, the plain `install-autostart.bat` covers the same "starts
+automatically" goal without touching Task Scheduler at all, just without the
+auto-restart-on-crash.
+
 ## How it decides what's a Movie, a Show, or Anime
 
 Notflix has no internet metadata lookup - it's all local and private. It works
@@ -387,3 +434,6 @@ actually in. Tapping either copies the full path.
   leaves it once you are within 20 seconds of the end.
 - If a drive is unplugged or asleep during a scan, its shows drop off the home
   screen but their progress is kept, and comes back with the drive.
+- When running via autostart, console output goes to `data/notflix.log`
+  (errors to `data/notflix-error.log`) instead of a window. Both are safe to
+  delete any time - they just start fresh on the next start.

@@ -528,7 +528,7 @@ app.get("/api/stream/:id", requirePlayAuth, (req, res) => {
 // ---------- Static frontend (PWA shell) ----------
 app.use(express.static(path.join(__dirname, "public")));
 
-app.listen(config.PORT, () => {
+const httpServer = app.listen(config.PORT, () => {
   const nets = os.networkInterfaces();
   const ips = [];
   Object.values(nets).forEach(list => list.forEach(iface => {
@@ -573,6 +573,26 @@ app.listen(config.PORT, () => {
       console.log("");
     });
   }
+});
+
+// A crash here would otherwise be a raw stack trace - unhelpful in a console
+// window, and invisible when running hidden as a background/startup task with
+// output only reaching a log file. This is the one failure worth naming: it
+// almost always means Notflix is already running (started at login, then
+// double-clicked again by hand) rather than anything actually broken.
+httpServer.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      "\n  Notflix couldn't start: port " + config.PORT + " is already in use.\n" +
+      "  This usually means Notflix is already running in the background\n" +
+      "  (e.g. it starts automatically when you log in now) - check for it at\n" +
+      "  http://localhost:" + config.PORT + " before starting another copy.\n" +
+      "  If something else is using that port, change PORT in config.js.\n"
+    );
+  } else {
+    console.error("\n  Notflix couldn't start:", err.message, "\n");
+  }
+  process.exit(1);
 });
 
 // Ctrl+C: withdraw the local name so phones stop being told this PC is here.
