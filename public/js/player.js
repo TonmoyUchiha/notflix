@@ -40,6 +40,13 @@
   const nextUpBtn = $("next-up-btn");
 
   let hls = null;
+  // Bumped on every open(). open() awaits /api/playinfo before touching the
+  // video element, so a slow request could finish AFTER you had already backed
+  // out and started something else - and then quietly apply the old video's
+  // source and subtitle tracks over the new one. That is the stale subtitle
+  // line hanging over a running episode. Each call keeps its own token and
+  // bails if a newer open() has started since.
+  let openToken = 0;
   let currentId = null;
   let currentInfo = null;
   let hideTimer = null;
@@ -113,6 +120,18 @@
   // hls.js on desktop, and iOS handing HLS to its own native player.
 
   function clearTracks() {
+    // Disable every track BEFORE detaching its element. Removing a <track>
+    // whose mode is still "showing" leaves its last cue painted: the element
+    // is gone, but the rendered cue box is never repainted away, so a single
+    // line of the previous video's subtitles hangs over the next one. Setting
+    // mode to "disabled" is what actually takes a cue off the screen.
+    //
+    // The TextTrack objects also outlive their elements in some browsers, so
+    // they are disabled through video.textTracks rather than via the elements.
+    for (const t of video.textTracks) {
+      t.removeEventListener("cuechange", positionCues);
+      t.mode = "disabled";
+    }
     [...video.querySelectorAll("track")].forEach(t => t.remove());
     activeSubId = null;
   }
@@ -283,6 +302,7 @@
 
   // ---------- Loading a video ----------
   async function open(id, title, opts) {
+    const myToken = ++openToken;
     currentId = id;
     callbacks = opts || {};
     titleEl.textContent = title || "";
@@ -299,8 +319,13 @@
     try {
       const res = await fetch("/api/playinfo/" + id);
       info = await res.json();
+      // Superseded while this was in flight - the user has already opened
+      // something else. Everything below writes to the shared video element,
+      // so this call must stop here rather than clobber the newer one.
+      if (myToken !== openToken) return;
       if (!res.ok) return showError(info.error || "This video couldn't be opened.");
     } catch (_) {
+      if (myToken !== openToken) return;
       return showError("Lost connection to your PC. Check that Notflix is still running.");
     }
     currentInfo = info;
