@@ -72,6 +72,8 @@ put no matter how far you scroll down a long episode list.
 
 The sections below walk through each step in full.
 
+A running list of what has changed is in [CHANGELOG.md](CHANGELOG.md).
+
 **Jump to:** [Install](#1-install-nodejs-one-time) ·
 [Setup](#4-install--start) ·
 [Phone](#5-open-it-on-your-phone) ·
@@ -204,6 +206,37 @@ else, or set `MDNS_ENABLED: false` to switch it off and use the IP only.
 > **If `notflix.local` fails on an iPhone too:** check Windows Firewall is
 > allowing Node.js on **private networks** — the name lookup uses UDP port
 > 5353, which is separate from the port the site itself runs on.
+
+### Why Android says "Add to Home screen" instead of "Install"
+
+On Android you get a plain shortcut rather than a real installed app: tapping
+it opens Chrome, and you may see both a blank app window and Chrome itself in
+your recent apps.
+
+That is not a fault in Notflix — everything on its side is in order (a valid
+manifest with the right icons and media type, and a service worker). Chrome on
+Android requires a **secure context** before it will offer to install a site,
+and `http://192.168.x.x:7777` is not one. iPhone is unaffected because iOS
+Safari's "Add to Home Screen" doesn't have that requirement, which is why it
+opens full-screen there.
+
+Two ways round it, if a real installed app matters to you:
+
+- **Tell Chrome to trust this one address.** On the phone, open
+  `chrome://flags/#unsafely-treat-insecure-origin-as-secure`, type your
+  Notflix address into the box (e.g. `http://192.168.1.200:7777`), set the
+  dropdown to **Enabled**, and relaunch Chrome. "Install app" then appears.
+  Needs doing once per phone.
+- **Put it behind real HTTPS**, e.g. a Tailscale or Cloudflare tunnel. More
+  moving parts, but it works everywhere without per-device setup.
+
+A self-signed certificate does *not* work here: Chrome doesn't treat an origin
+with a certificate error as secure either, so you would get the warning *and*
+still no install prompt — unless you install your own certificate authority on
+every phone.
+
+Without either, the shortcut still works fine; it just opens in Chrome rather
+than as its own app.
 
 ## Everyday use
 

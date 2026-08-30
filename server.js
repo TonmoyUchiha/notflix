@@ -526,6 +526,15 @@ app.get("/api/stream/:id", requirePlayAuth, (req, res) => {
 });
 
 // ---------- Static frontend (PWA shell) ----------
+
+// The manifest has its own media type. Express would serve it as plain
+// application/json, which browsers mostly tolerate - but "mostly" is not what
+// you want standing between you and an installable app.
+app.get("/manifest.json", (req, res) => {
+  res.type("application/manifest+json");
+  res.sendFile(path.join(__dirname, "public", "manifest.json"));
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 const httpServer = app.listen(config.PORT, () => {

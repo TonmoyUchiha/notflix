@@ -523,6 +523,7 @@
 
   async function openDetail(id) {
     hideSearchPanel(true);
+    ensureBackGuard();
     const res = await fetch("/api/title/" + id);
     if (!res.ok) return;
     openTitle = await res.json();
@@ -717,6 +718,7 @@
       detailScrim.classList.add("hidden");
       document.body.style.overflow = "";
       openTitle = null;
+      releaseBackGuard();
     };
     detailScrim.classList.remove("open");
     // A swipe has already animated it off-screen; anything else plays the
@@ -737,6 +739,7 @@
 
   function playVideo(videoId, showTitle) {
     if (!videoId) return;
+    ensureBackGuard();
     const wasDetailOpen = !detail.classList.contains("hidden");
     detail.classList.add("hidden");
     detailScrim.classList.add("hidden");
@@ -756,6 +759,7 @@
           document.body.style.overflow = "";
         }
         loadLibrary();
+        releaseBackGuard();
       },
       onPlay: (nextId, nextLabel) => playVideo(nextId, nextLabel)
     });
@@ -765,6 +769,7 @@
   let searchTimer = null;
 
   searchBtn.addEventListener("click", () => {
+    ensureBackGuard();
     searchPanel.classList.remove("hidden");
     document.body.style.overflow = "hidden";
     searchInput.focus();
@@ -777,6 +782,7 @@
   searchClose.addEventListener("click", () => {
     hideSearchPanel(false);
     document.body.style.overflow = "";
+    releaseBackGuard();
   });
 
   searchInput.addEventListener("input", () => {
@@ -874,6 +880,7 @@
   };
 
   function openSidebar() {
+    ensureBackGuard();
     sidebar.classList.add("open");
     sidebarScrim.classList.add("open");
     menuBtn.classList.add("open");
@@ -889,6 +896,7 @@
     menuBtn.setAttribute("aria-expanded", "false");
     sidebar.setAttribute("aria-hidden", "true");
     if (detail.classList.contains("hidden")) document.body.style.overflow = "";
+    releaseBackGuard();
   }
 
   function sidebarOpen() { return sidebar.classList.contains("open"); }
@@ -1084,6 +1092,68 @@
     detail.addEventListener("touchend", end, { passive: true });
     detail.addEventListener("touchcancel", end, { passive: true });
   })();
+
+  // ---------------- Hardware / browser back button ----------------
+  //
+  // Without this, Android's back gesture leaves the site entirely - out of the
+  // app, back to typing the address again - even when all you wanted was to
+  // shut the episode list you just opened.
+  //
+  // The trick is that a page cannot "absorb" a back press directly; it can
+  // only be given something to go back TO. So while anything is layered over
+  // the browse screen, one extra history entry is parked behind it. Back then
+  // lands on that entry instead of leaving, popstate fires, and the topmost
+  // layer is closed. If something is still open underneath, another entry is
+  // parked for the next press.
+  //
+  // Only one entry is ever outstanding (guardPushed), so the history does not
+  // fill up with junk however many times layers are opened and closed.
+  let guardPushed = false;
+
+  function playerOpen() {
+    const el = $("player-screen");
+    return el && !el.classList.contains("hidden");
+  }
+
+  function anyLayerOpen() {
+    return playerOpen() ||
+           !detail.classList.contains("hidden") ||
+           !searchPanel.classList.contains("hidden") ||
+           sidebar.classList.contains("open");
+  }
+
+  // Closes whatever is on top. Order matches what is visually in front.
+  function closeTopLayer() {
+    if (playerOpen()) { window.NotflixPlayer.close(); return true; }
+    if (!detail.classList.contains("hidden")) { closeDetail(true); return true; }
+    if (!searchPanel.classList.contains("hidden")) {
+      hideSearchPanel(false);
+      document.body.style.overflow = "";
+      return true;
+    }
+    if (sidebar.classList.contains("open")) { closeSidebar(); return true; }
+    return false;
+  }
+
+  function ensureBackGuard() {
+    if (guardPushed) return;
+    try { history.pushState({ notflixLayer: true }, ""); guardPushed = true; }
+    catch (_) { /* history unavailable - back simply behaves as it used to */ }
+  }
+
+  // A layer closed from the UI rather than from a back press. The parked entry
+  // is no longer needed, so it is consumed here - otherwise the next back press
+  // would be silently swallowed doing nothing.
+  function releaseBackGuard() {
+    if (!guardPushed || anyLayerOpen()) return;
+    guardPushed = false;
+    try { history.back(); } catch (_) {}
+  }
+
+  window.addEventListener("popstate", () => {
+    guardPushed = false;
+    if (closeTopLayer() && anyLayerOpen()) ensureBackGuard();
+  });
 
   // ---------------- Boot ----------------
   (async function boot() {
