@@ -348,6 +348,8 @@
     if (!items.length) return;
     const row = document.createElement("div");
     row.className = "row";
+    // Drives the per-shelf accent colour in CSS (see --row-accent).
+    row.dataset.row = title;
 
     const head = document.createElement("div");
     head.className = "row-head";

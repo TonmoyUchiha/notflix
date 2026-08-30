@@ -919,3 +919,193 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .row-nav { transition: none; }
 }
+
+/* ==========================================================
+   DESKTOP ROWS: BUTTONS ONLY
+   overflow-x:hidden stops every *user* way of scrolling a row
+   sideways - scrollbar, trackpad swipe, shift+wheel - while
+   leaving programmatic scrollBy (the arrows) working, since
+   that ignores overflow. Touch keeps overflow-x:auto below,
+   because a finger has nothing but the swipe.
+   ========================================================== */
+@media (hover: hover) and (pointer: fine) {
+  .row-scroller {
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .row-scroller::-webkit-scrollbar { display: none; }
+}
+
+/* ==========================================================
+   COLOUR + DEPTH
+   The palette was a single near-black. These add a quiet wash
+   of colour behind everything and give each shelf its own hue,
+   so the page reads as somewhere rather than a black void.
+   ========================================================== */
+/* Painted as the body's own background rather than a z-index:-1 ::before -
+   that sits BEHIND the body's opaque background and is never seen. Fixed
+   attachment so the wash stays put while the shelves scroll over it. */
+body {
+  background:
+    radial-gradient(1100px 780px at 8% -12%,  rgba(255, 75, 62, 0.20), transparent 60%),
+    radial-gradient(1000px 700px at 92% 4%,   rgba(23, 163, 152, 0.16), transparent 60%),
+    radial-gradient(950px 700px at 45% 105%,  rgba(126, 87, 255, 0.16), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Per-shelf accent. Everything below reads --row-accent, so one line here
+   re-tints a whole row: its title bar, its card glow, its arrows. */
+.row { --row-accent: var(--accent); }
+.row[data-row="My List"]           { --row-accent: #17A398; }
+.row[data-row="Continue watching"] { --row-accent: #FF4B3E; }
+.row[data-row="Recently added"]    { --row-accent: #FFA23E; }
+.row[data-row="Movies"]            { --row-accent: #FF4B3E; }
+.row[data-row="TV Shows"]          { --row-accent: #4C8DFF; }
+.row[data-row="Anime"]             { --row-accent: #B36BFF; }
+.row[data-row="Clips"]             { --row-accent: #17A398; }
+.row[data-row="Home Videos"]       { --row-accent: #FFC53E; }
+.row[data-row="Tutorials"]         { --row-accent: #5ED4A0; }
+.row[data-row="Music Videos"]      { --row-accent: #FF6BC1; }
+.row[data-row="Other"]             { --row-accent: #8A8A93; }
+
+/* ---------------- Shelf headings ---------------- */
+.row-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.01em;
+}
+.row-title::before {
+  content: "";
+  width: 4px;
+  height: 1.05em;
+  border-radius: 999px;
+  background: var(--row-accent);
+  box-shadow: 0 0 12px -2px var(--row-accent);
+  flex: 0 0 auto;
+}
+
+/* ---------------- Cards ---------------- */
+/* Extra vertical room in the scroller so a lifted, scaled card is not
+   clipped by the row's own overflow. */
+.row-scroller { padding: 14px 16px 20px; }
+
+.card {
+  border-radius: 14px;
+  background: linear-gradient(180deg, #17171A 0%, #131316 100%);
+  transition: transform 0.28s var(--ease),
+              box-shadow 0.28s var(--ease),
+              border-color 0.28s var(--ease);
+}
+.card-art { overflow: hidden; }
+.card-thumb { transition: transform 0.5s var(--ease); }
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-8px) scale(1.035);
+    border-color: var(--row-accent);
+    box-shadow:
+      0 20px 44px rgba(0, 0, 0, 0.6),
+      0 10px 34px -12px var(--row-accent);
+    z-index: 3;
+  }
+  /* The art drifts in a little slower than the card lifts, which is what
+     makes the whole thing feel alive rather than just moved. */
+  .card:hover .card-thumb { transform: scale(1.09); }
+  .card:hover .card-title { color: #fff; }
+}
+.card:active { transform: translateY(-2px) scale(0.99); }
+
+/* ---------------- Row arrows: a bubble on a fade ---------------- */
+.row-nav { font-size: 0; }
+.row-nav::after {
+  content: "";
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(20, 20, 24, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px 15px;
+  transition: transform 0.2s var(--ease), background-color 0.2s var(--ease),
+              border-color 0.2s var(--ease);
+}
+.row-nav-prev::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%23F2F2F0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 1 2 8l6 7'/%3E%3C/svg%3E");
+}
+.row-nav-next::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%23F2F2F0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 1l6 7-6 7'/%3E%3C/svg%3E");
+}
+@media (hover: hover) and (pointer: fine) {
+  .row-nav:hover::after {
+    transform: scale(1.12);
+    background-color: var(--row-accent);
+    border-color: var(--row-accent);
+  }
+  .row-nav:active::after { transform: scale(0.94); }
+}
+
+/* ---------------- Tabs ---------------- */
+.nav-tab {
+  border-radius: 999px;
+  padding: 7px 14px;
+  transition: background 0.22s var(--ease), color 0.22s var(--ease),
+              transform 0.22s var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-tab:hover { background: rgba(255,255,255,0.08); color: var(--text); transform: translateY(-1px); }
+}
+.nav-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, #FF7A5E 100%);
+  box-shadow: 0 6px 18px -6px var(--accent);
+}
+
+/* ---------------- Buttons ---------------- */
+.play-btn, .info-btn, .list-btn {
+  border-radius: 999px;
+  padding-left: 22px;
+  padding-right: 22px;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease),
+              background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(255,255,255,0.55); }
+  .info-btn:hover { transform: translateY(-2px); background: rgba(140,140,150,0.6); }
+  .list-btn:hover { transform: translateY(-2px); border-color: var(--accent-2); }
+  .icon-btn:hover { background: rgba(255,255,255,0.08); }
+}
+.icon-btn { border-radius: 50%; }
+
+/* ---------------- Sidebar ---------------- */
+.sidebar { background: linear-gradient(180deg, #16161A 0%, #101013 100%); }
+.sidebar-item { border-radius: 12px; }
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-item:hover { background: rgba(255,255,255,0.07); color: var(--text); transform: translateX(3px); }
+}
+.sidebar-item.active {
+  background: linear-gradient(90deg, rgba(255,75,62,0.16), rgba(255,75,62,0.02));
+}
+
+/* ---------------- Episode rows ---------------- */
+.episode { border-radius: 12px; transition: background 0.2s var(--ease), transform 0.2s var(--ease); }
+@media (hover: hover) and (pointer: fine) {
+  .episode:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); }
+}
+
+/* ---------------- Hero ---------------- */
+.hero-title { text-shadow: 0 4px 30px rgba(0,0,0,0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .card-thumb, .nav-tab, .play-btn, .info-btn, .list-btn,
+  .sidebar-item, .episode, .row-nav::after { transition: none !important; }
+  .card:hover, .card:hover .card-thumb, .nav-tab:hover, .play-btn:hover,
+  .info-btn:hover, .list-btn:hover, .sidebar-item:hover, .episode:hover,
+  .row-nav:hover::after { transform: none !important; }
+}
