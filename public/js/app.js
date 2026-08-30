@@ -421,61 +421,6 @@
     setTimeout(updateArrows, 0);
     setTimeout(updateArrows, 600);
 
-    // A plain mouse wheel only reports deltaY, so without this a wheel over a
-    // row does nothing horizontal at all. Deliberately does NOT swallow the
-    // page scroll at the ends of the row: once you have reached the last card,
-    // carrying on scrolling should move the page, not sit there stuck.
-    scroller.addEventListener("wheel", (e) => {
-      if (e.ctrlKey) return;                    // pinch-zoom gesture
-      const max = scroller.scrollWidth - scroller.clientWidth;
-      if (max <= 4) return;                     // nothing to scroll
-      // A trackpad's horizontal swipe already works; leave it alone.
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-
-      const dir = e.deltaY > 0 ? 1 : -1;
-      const atEnd = (dir > 0 && scroller.scrollLeft >= max - 1) ||
-                    (dir < 0 && scroller.scrollLeft <= 1);
-      if (atEnd) return;                        // let the page take over
-
-      e.preventDefault();
-      scroller.scrollLeft += e.deltaY;
-    }, { passive: false });
-
-    // Click-and-drag, the way you would shove a shelf sideways.
-    let down = false, startX = 0, startLeft = 0, moved = 0;
-
-    scroller.addEventListener("pointerdown", (e) => {
-      if (e.pointerType !== "mouse" || e.button !== 0) return;
-      down = true; moved = 0;
-      startX = e.clientX;
-      startLeft = scroller.scrollLeft;
-    });
-
-    scroller.addEventListener("pointermove", (e) => {
-      if (!down) return;
-      const dx = e.clientX - startX;
-      if (!moved && Math.abs(dx) < 4) return;   // tolerate a shaky click
-      moved = Math.max(moved, Math.abs(dx));
-      scroller.classList.add("dragging");
-      scroller.scrollLeft = startLeft - dx;
-      e.preventDefault();
-    });
-
-    function endDrag() {
-      if (!down) return;
-      down = false;
-      scroller.classList.remove("dragging");
-      // Let the click that follows through only if this was a real click.
-      // Without this, dragging across a row opens whatever card you let go on.
-      if (moved > 4) {
-        const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-        scroller.addEventListener("click", swallow, { capture: true, once: true });
-        setTimeout(() => scroller.removeEventListener("click", swallow, true), 50);
-      }
-    }
-    scroller.addEventListener("pointerup", endDrag);
-    scroller.addEventListener("pointercancel", endDrag);
-    scroller.addEventListener("pointerleave", endDrag);
   }
 
 
