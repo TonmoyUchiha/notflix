@@ -47,6 +47,10 @@
   let callbacks = {};
   let activeSubId = null;
 
+  // Seconds the skip buttons, double-tap and arrow keys jump. One constant
+  // so the buttons' labels and every jump site can never drift apart.
+  const SEEK_STEP = 5;
+
   const SPEEDS = [0.5, 1, 1.25, 1.5, 2];
   let speedIndex = 1;
 
@@ -66,11 +70,21 @@
     stage.classList.toggle("controls-visible", on);
   }
 
+  // How long the controls stay up after you reveal them. Touch gets noticeably
+  // longer than mouse: on a phone every action is reveal-then-aim-then-tap,
+  // and the old 3.2s ran out mid-reach - especially for the small targets
+  // (the back button, or grabbing the seek bar handle). A mouse pointer moves
+  // and re-triggers this constantly, so it does not need the same slack.
+  const HIDE_DELAY_TOUCH = 6000;
+  const HIDE_DELAY_MOUSE = 3200;
+  const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  const HIDE_DELAY = isTouch ? HIDE_DELAY_TOUCH : HIDE_DELAY_MOUSE;
+
   function showControls() {
     setControlsVisible(true);
     clearTimeout(hideTimer);
     if (!video.paused && subsSheet.classList.contains("hidden")) {
-      hideTimer = setTimeout(() => setControlsVisible(false), 3200);
+      hideTimer = setTimeout(() => setControlsVisible(false), HIDE_DELAY);
     }
   }
   function toggleControls() {
@@ -439,8 +453,12 @@
 
   playBtn.addEventListener("click", togglePlay);
   bigPlayBtn.addEventListener("click", togglePlay);
-  back10.addEventListener("click", () => skip(-10));
-  fwd10.addEventListener("click", () => skip(10));
+  back10.textContent = "↺" + SEEK_STEP;
+  fwd10.textContent = SEEK_STEP + "↻";
+  back10.title = "Back " + SEEK_STEP + " seconds";
+  fwd10.title = "Forward " + SEEK_STEP + " seconds";
+  back10.addEventListener("click", () => skip(-SEEK_STEP));
+  fwd10.addEventListener("click", () => skip(SEEK_STEP));
   closeBtn.addEventListener("click", close);
 
   video.addEventListener("play", () => {
@@ -545,8 +563,8 @@
 
     if (now - lastTap < 300) {
       // Double tap: seek back on the left third, forward on the right third.
-      if (x < rect.width * 0.35) skip(-10);
-      else if (x > rect.width * 0.65) skip(10);
+      if (x < rect.width * 0.35) skip(-SEEK_STEP);
+      else if (x > rect.width * 0.65) skip(SEEK_STEP);
       else togglePlay();
       lastTap = 0;
     } else {
@@ -595,8 +613,8 @@
     if (screen.classList.contains("hidden")) return;
     switch (e.key) {
       case " ": case "k": e.preventDefault(); togglePlay(); break;
-      case "ArrowLeft": skip(-10); break;
-      case "ArrowRight": skip(10); break;
+      case "ArrowLeft": skip(-SEEK_STEP); break;
+      case "ArrowRight": skip(SEEK_STEP); break;
       case "ArrowUp": video.volume = Math.min(1, video.volume + 0.1); break;
       case "ArrowDown": video.volume = Math.max(0, video.volume - 0.1); break;
       case "f": fsBtn.click(); break;
