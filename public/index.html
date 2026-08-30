@@ -108,8 +108,15 @@
     <div id="search-empty" class="search-empty hidden"></div>
   </div>
 
-  <!-- ============ TITLE DETAIL ============ -->
-  <div id="detail" class="detail hidden">
+  <!-- ============ TITLE DETAIL (modal) ============ -->
+  <div id="detail-scrim" class="detail-scrim hidden"></div>
+  <div id="detail" class="detail hidden" role="dialog" aria-modal="true">
+    <!-- Inside the modal but outside the scrolling area, so it stays pinned
+         while the episode list scrolls under it - and, being a child of
+         #detail again, it can no longer be left behind on screen when the
+         player opens over the top. -->
+    <button id="detail-close" class="detail-close" aria-label="Back">&#8592;</button>
+    <div id="detail-scroll" class="detail-scroll">
     <div class="detail-hero">
       <div id="detail-backdrop" class="detail-backdrop"></div>
       <div class="detail-fade"></div>
@@ -134,12 +141,8 @@
       </div>
       <div id="episode-list" class="episode-list"></div>
     </div>
+    </div>
   </div>
-  <!-- A sibling of #detail, not a child. #detail is the scrolling element and
-       carries a transform, and a transformed ancestor makes position:fixed
-       resolve against *it* rather than the viewport - so nested here the button
-       scrolled away with the episode list. -->
-  <button id="detail-close" class="detail-close hidden" aria-label="Back">&#8592;</button>
 
   <!-- ============ PLAYER ============ -->
   <div id="player-screen" class="screen hidden">

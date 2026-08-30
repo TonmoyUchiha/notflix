@@ -38,6 +38,8 @@
   const episodeList = $("episode-list");
   const detailList = $("detail-list");
   const detailListText = $("detail-list-text");
+  const detailScrim = $("detail-scrim");
+  const detailScroll = $("detail-scroll");
   const detailPath = $("detail-path");
   const detailPathValue = $("detail-path-value");
   const detailPathCopied = $("detail-path-copied");
@@ -436,11 +438,12 @@
       badge.title = "In My List";
       card.appendChild(badge);
     }
-    // A Continue Watching card jumps straight back into the episode you
-    // stopped on; every other card opens the title.
-    card.onclick = t.resumeVideoId
-      ? () => playVideo(t.resumeVideoId, t.title)
-      : () => openDetail(t.id);
+    // Every card opens the title, Continue Watching included. That card used
+    // to start playing immediately, which left no way to pick a different
+    // episode - you were committed the moment you touched it. The modal's
+    // Play button already resumes exactly where you stopped (see
+    // firstUnwatched), so nothing is lost by going through it.
+    card.onclick = () => openDetail(t.id);
 
     const art = document.createElement("div");
     art.className = "card-art";
@@ -531,7 +534,8 @@
     detailMeta.innerHTML = "";
     metaBits(openTitle).forEach(b => detailMeta.appendChild(b));
 
-    detailClose.classList.remove("hidden", "leaving");
+    detailScrim.classList.remove("hidden");
+    requestAnimationFrame(() => detailScrim.classList.add("open"));
     renderSourcePath(openTitle);
     if (typeof openTitle.inList === "boolean") {
       if (openTitle.inList) List.ids.add(openTitle.id); else List.ids.delete(openTitle.id);
@@ -562,7 +566,7 @@
     }
 
     detail.classList.remove("hidden");
-    detail.scrollTop = 0;
+    detailScroll.scrollTop = 0;
     document.body.style.overflow = "hidden";
   }
 
@@ -710,19 +714,20 @@
     const finish = () => {
       detail.classList.add("hidden");
       detail.classList.remove("closing");
-      detailClose.classList.add("hidden");
-      detailClose.classList.remove("leaving");
+      detailScrim.classList.add("hidden");
       document.body.style.overflow = "";
       openTitle = null;
     };
-    detailClose.classList.add("leaving");
+    detailScrim.classList.remove("open");
     // A swipe has already animated it off-screen; anything else plays the
-    // exit animation first so the screen does not just blink away.
+    // exit animation first so the modal does not just blink away.
     if (immediate) return finish();
     detail.classList.add("closing");
     setTimeout(finish, 180);
   }
   detailClose.addEventListener("click", () => closeDetail());
+  // Clicking the dimmed area behind a modal closes it, as modals do.
+  detailScrim.addEventListener("click", () => closeDetail());
 
   // ---------------- Playback hand-off ----------------
   function playTitle(t) {
@@ -734,6 +739,7 @@
     if (!videoId) return;
     const wasDetailOpen = !detail.classList.contains("hidden");
     detail.classList.add("hidden");
+    detailScrim.classList.add("hidden");
     searchPanel.classList.add("hidden");
     browseScreen.classList.add("hidden");
     document.body.style.overflow = "hidden";
@@ -743,6 +749,8 @@
         browseScreen.classList.remove("hidden");
         if (wasDetailOpen && openTitle) {
           detail.classList.remove("hidden");
+          detailScrim.classList.remove("hidden");
+          detailScrim.classList.add("open");
           if (openTitle.type === "series") renderEpisodes(Number(seasonSelect.value || 0));
         } else {
           document.body.style.overflow = "";
@@ -1015,6 +1023,9 @@
 
     detail.addEventListener("touchstart", (e) => {
       if (detail.classList.contains("hidden") || e.touches.length !== 1) return;
+      // Only where the modal fills the screen. At desktop widths it is centred
+      // with a translate(-50%,-50%), which dragging the transform would undo.
+      if (window.innerWidth >= 900) return;
       const t = e.touches[0];
       if (t.clientX > EDGE) return;
       startX = t.clientX; startY = t.clientY;
@@ -1038,12 +1049,7 @@
 
       if (dx > 0) {
         detail.style.transform = "translateX(" + dx + "px)";
-        const fade = String(Math.max(0.35, 1 - dx / 320));
-        detail.style.opacity = fade;
-        // The button lives outside the panel now, so it has to be faded along
-        // with it or it hangs in mid-air over the page underneath.
-        detailClose.style.opacity = fade;
-        detailClose.style.transform = "translateX(" + dx + "px)";
+        detail.style.opacity = String(Math.max(0.35, 1 - dx / 320));
         e.preventDefault();
       }
     }, { passive: false });
@@ -1058,15 +1064,12 @@
         detail.classList.add("settling");
         detail.style.transform = "translateX(100%)";
         detail.style.opacity = "0";
-        detailClose.style.opacity = "0";
         setTimeout(() => { resetDrag(); closeDetail(true); }, 180);
       } else if (decided) {
         // Not far enough - spring it back where it was.
         detail.classList.add("settling");
         detail.style.transform = "";
         detail.style.opacity = "";
-        detailClose.style.transform = "";
-        detailClose.style.opacity = "";
         setTimeout(resetDrag, 180);
       }
       decided = false;
@@ -1076,8 +1079,6 @@
       detail.classList.remove("settling", "dragging");
       detail.style.transform = "";
       detail.style.opacity = "";
-      detailClose.style.transform = "";
-      detailClose.style.opacity = "";
     }
 
     detail.addEventListener("touchend", end, { passive: true });
