@@ -572,15 +572,32 @@
   seekBar.addEventListener("touchmove", moveScrub, { passive: false });
   seekBar.addEventListener("touchend", endScrub);
 
-  // ---------- Tap and double-tap on the video ----------
+  // ---------- Clicking / tapping the video ----------
+  //
+  // Mouse and touch want opposite things here, so they get opposite handling.
+  //
+  // With a mouse, a click means play/pause - that is what every web player
+  // does, and the controls are already revealed just by moving the pointer,
+  // so spending the click on them makes the video feel unresponsive.
+  //
+  // With a finger there is no hover, so a tap is the only way to bring the
+  // controls up, and that is what it does; seeking is the double-tap.
+  function ignoreClick(e) {
+    return e.target.closest("#player-controls") ||
+           e.target.closest("#big-play") ||
+           e.target.closest("#subs-sheet") ||
+           e.target.closest("#next-up");
+  }
+
   let lastTap = 0;
   stage.addEventListener("click", (e) => {
-    if (e.target.closest("#player-controls") ||
-        e.target.closest("#big-play") ||
-        e.target.closest("#subs-sheet") ||
-        e.target.closest("#next-up")) return;
-
+    if (ignoreClick(e)) return;
     if (!subsSheet.classList.contains("hidden")) { closeSubsSheet(); return; }
+
+    if (!isTouch) {
+      togglePlay();
+      return;
+    }
 
     const now = Date.now();
     const rect = stage.getBoundingClientRect();
@@ -601,6 +618,14 @@
         }
       }, 300);
     }
+  });
+
+  // Double-click to go fullscreen, as on every other web player. The two
+  // clicks that make it up each toggle play, so they cancel out and playback
+  // is left as it was.
+  stage.addEventListener("dblclick", (e) => {
+    if (isTouch || ignoreClick(e)) return;
+    fsBtn.click();
   });
 
   // ---------- Fullscreen ----------

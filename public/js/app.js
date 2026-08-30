@@ -501,7 +501,23 @@
   }
 
   // ---------------- Title detail ----------------
+  // Picking a result closes the search panel. Leaving it open behind the title
+  // put two dismiss controls on screen at once - the title's back arrow and
+  // search's X - and made getting back to browsing a two-press job. The query
+  // is deliberately kept, so reopening search brings your results straight
+  // back rather than an empty box.
+  function hideSearchPanel(keepQuery) {
+    if (searchPanel.classList.contains("hidden")) return;
+    searchPanel.classList.add("hidden");
+    if (!keepQuery) {
+      searchInput.value = "";
+      searchResults.innerHTML = "";
+      searchEmpty.classList.add("hidden");
+    }
+  }
+
   async function openDetail(id) {
+    hideSearchPanel(true);
     const res = await fetch("/api/title/" + id);
     if (!res.ok) return;
     openTitle = await res.json();
@@ -742,14 +758,15 @@
     searchPanel.classList.remove("hidden");
     document.body.style.overflow = "hidden";
     searchInput.focus();
+    searchInput.select();
+    // Results were kept when a title was opened from here; re-run so the list
+    // reflects anything that changed in the library since.
+    if (searchInput.value.trim().length >= 2) runSearch();
   });
 
   searchClose.addEventListener("click", () => {
-    searchPanel.classList.add("hidden");
+    hideSearchPanel(false);
     document.body.style.overflow = "";
-    searchInput.value = "";
-    searchResults.innerHTML = "";
-    searchEmpty.classList.add("hidden");
   });
 
   searchInput.addEventListener("input", () => {
