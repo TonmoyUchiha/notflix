@@ -23,7 +23,13 @@ module.exports = {
   //     http://notflix.local:7777
   //
   // and it keeps working no matter what IP your PC ends up with. Nothing to
-  // set up on the router. Works on iPhone out of the box, and on Android 12+.
+  // set up on the router.
+  //
+  // iPhone/iPad only. Android cannot resolve ".local" names in the browser -
+  // not on any version - because Android's DNS has no equivalent of Apple's
+  // built-in Bonjour, and Chrome does not do mDNS lookups itself. On Android,
+  // use the PC's IP address instead, and give the PC a fixed IP so that
+  // address stops changing (see the README).
   //
   // Change the name here if you like (the ".local" part is added for you).
   HOSTNAME: "notflix",

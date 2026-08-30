@@ -539,11 +539,14 @@ const httpServer = app.listen(config.PORT, () => {
   console.log("  On this PC:      http://localhost:" + config.PORT);
 
   if (config.MDNS_ENABLED) {
-    // The address to actually save on the phone: it survives the router
-    // handing this PC a different IP, which a saved home-screen icon does not.
+    // Two addresses, because they are not interchangeable. The .local name
+    // survives this PC being given a different IP - but only iPhones can
+    // resolve it; Android has no mDNS in the browser on any version, so
+    // Android has to use the IP. Saying which is which here avoids an
+    // Android user saving the one address that cannot ever work for them.
     const name = String(config.HOSTNAME || "notflix").replace(/\.local\.?$/i, "") + ".local";
-    console.log("  On your phone:   http://" + name + ":" + config.PORT + "   <- add this one");
-    ips.forEach(ip => console.log("  (or by IP:       http://" + ip + ":" + config.PORT + ")"));
+    console.log("  On iPhone:       http://" + name + ":" + config.PORT);
+    ips.forEach(ip => console.log("  On Android:      http://" + ip + ":" + config.PORT));
     mdnsHandle = mdns.start(config.HOSTNAME || "notflix");
   } else {
     ips.forEach(ip => console.log("  On your phone:   http://" + ip + ":" + config.PORT));

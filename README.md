@@ -156,29 +156,54 @@ Leave this window open — closing it stops the server.
 From now on, tapping the Notflix icon opens it full-screen like a real app —
 no browser bars, no address typing.
 
-### Use the name, not the IP address
+### Getting an address that doesn't change
 
 Your router hands your PC a new IP every so often. A home-screen icon
 remembers the exact address it was added from, so when the IP moves the icon
-stops working and you have to delete and re-add it.
+stops working and you have to delete and re-add it. Two ways to stop that,
+depending on the phone.
 
-`notflix.local` avoids that. Notflix answers to that name on your home network
-and replies with whatever IP it currently has, so **the address on your phone
-never has to change again.** There is nothing to configure on your router.
-It works on iPhone out of the box, and on Android 12 and newer.
+**On iPhone/iPad — use `notflix.local`.** Notflix answers to that name on your
+home network and replies with whatever IP it currently has, so the address on
+your phone never has to change. Nothing to configure.
 
-The console still prints the raw `http://192.168.x.x:7777` address as a
-fallback — use it if you ever need it, but don't save that one to your home
-screen.
+**On Android — use the IP, and give your PC a fixed one.** Android cannot
+resolve `.local` names in a browser, on any version: Android's DNS has no
+equivalent of Apple's built-in Bonjour, and Chrome does not do mDNS lookups
+itself. `notflix.local` will always fail there with
+`DNS_PROBE_FINISHED_NXDOMAIN` — that is Android, not a fault in your setup.
+
+So on Android you use `http://192.168.x.x:7777`, and the way to make that
+address permanent is to stop Windows asking for a new one. It's a one-time
+change on the PC — no router login:
+
+1. **Settings → Network & Internet**, then click your connection
+   (**Ethernet**, or **Wi-Fi** → the network you're on).
+2. Next to **IP assignment**, click **Edit**.
+3. Change **Automatic (DHCP)** to **Manual**, and switch **IPv4** on.
+4. Fill in (run `npm start` and it prints your own values — these are the
+   shape of them):
+   - **IP address:** an address on your network that nothing else uses.
+     Pick a high one like `192.168.1.200`; high numbers are usually outside
+     the range routers hand out automatically, which avoids a clash.
+   - **Subnet mask:** `255.255.255.0`
+   - **Gateway:** your router, usually `192.168.1.1`
+   - **Preferred DNS:** the same as the gateway, usually `192.168.1.1`
+5. **Save**, then use `http://192.168.1.200:7777` on every device and add
+   *that* to your home screen.
+
+That address now survives reboots, so the home-screen icon keeps working.
+
+> If your internet stops working after step 5, the gateway or DNS is wrong for
+> your network — set **IP assignment** back to **Automatic (DHCP)** and you're
+> exactly where you started, then re-check the values `npm start` prints.
 
 Change the name in `config.js` (`HOSTNAME`) if you'd rather it were something
 else, or set `MDNS_ENABLED: false` to switch it off and use the IP only.
 
-> **If `notflix.local` doesn't load:** check Windows Firewall is allowing
-> Node.js on **private networks** — the name lookup uses UDP port 5353, which
-> is separate from the port the site itself runs on. Older Androids (11 and
-> below) can't resolve `.local` names at all; on those, use the IP address and
-> set up a DHCP reservation for your PC in your router so the IP stops moving.
+> **If `notflix.local` fails on an iPhone too:** check Windows Firewall is
+> allowing Node.js on **private networks** — the name lookup uses UDP port
+> 5353, which is separate from the port the site itself runs on.
 
 ## Everyday use
 
