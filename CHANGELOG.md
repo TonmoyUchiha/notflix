@@ -6,6 +6,28 @@ Notable changes to Notflix, newest first. Dates are when the change landed.
 
 ## 2026-08-31
 
+### Fixed: the player's controls vanished ~300ms after tapping (Android)
+
+Tapping the video showed the controls and then hid them again almost
+immediately. They only stayed up while a finger was held on the screen.
+
+Both symptoms had one cause. A tap on Android also emits *compatibility mouse
+events* — `mousemove`, `mousedown`, `mouseup`, `click` — and the player bound
+`mousemove` to "show the controls". So a tap revealed the controls via that
+binding, and then the tap handler arrived 300ms later, found them already
+visible, and treated the tap as "dismiss". Holding a finger down masked it,
+because the continuous stream of move events kept re-showing them.
+
+`mousemove` is now bound only for real pointers. While there, a tap on a
+hidden HUD reveals it immediately rather than after the 300ms wait that
+existed to rule out a double tap — a second tap is still caught as a seek
+after it is showing, so the wait bought nothing and made it feel laggy.
+
+Measured on an emulated Pixel 7 with a real touchscreen tap: the controls
+lasted **304ms** before, and **6008ms** after, appearing in 13ms either way.
+Double-tap-to-seek, tap-to-dismiss and desktop click-to-pause all still work.
+
+
 ### Android back button no longer throws you out of the app
 
 Pressing back on Android left the site entirely — out of Notflix, back to

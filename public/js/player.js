@@ -94,10 +94,6 @@
       hideTimer = setTimeout(() => setControlsVisible(false), HIDE_DELAY);
     }
   }
-  function toggleControls() {
-    setControlsVisible(!controls.classList.contains("visible"));
-    if (controls.classList.contains("visible")) showControls();
-  }
 
   // ---------- Status / spinner / errors ----------
   function setStatus(text) {
@@ -611,12 +607,19 @@
       lastTap = 0;
     } else {
       lastTap = now;
-      setTimeout(() => {
-        if (lastTap !== 0 && Date.now() - lastTap >= 300) {
-          toggleControls();
-          lastTap = 0;
-        }
-      }, 300);
+      if (!controls.classList.contains("visible")) {
+        // Hidden: show it straight away, and let the full timeout run.
+        showControls();
+      } else {
+        // Already showing: a lone tap dismisses it, but only once we know
+        // this was not the first half of a double tap meant as a seek.
+        setTimeout(() => {
+          if (lastTap !== 0 && Date.now() - lastTap >= 300) {
+            setControlsVisible(false);
+            lastTap = 0;
+          }
+        }, 300);
+      }
     }
   });
 
@@ -679,7 +682,13 @@
   });
 
   // Mouse movement on desktop reveals controls.
-  stage.addEventListener("mousemove", showControls);
+  // Only for a real pointer. A tap on Android also emits compatibility mouse
+  // events (mousemove, mousedown, mouseup, click), so binding this on a touch
+  // device meant every tap revealed the HUD here first - and the tap handler,
+  // arriving 300ms later, then found it visible and dismissed it. The HUD
+  // lasted about 300ms. Holding a finger down masked it, because the stream of
+  // move events kept re-showing it, which is why it "only stayed while held".
+  if (!isTouch) stage.addEventListener("mousemove", showControls);
 
   window.NotflixPlayer = { open, close };
 })();
